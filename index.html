@@ -12,10 +12,10 @@
 <body>
     <div id="tooltip" class="tooltip"></div>
     <script>
-        // 1. YOUR LIVE GOOGLE SHEET DATA
+        // 1. LIVE GOOGLE SHEET DATA (Pulls directly from Sheet1)
         const sheetCsvUrl = "https://docs.google.com/spreadsheets/d/1rv0z_1gRn2mcK2lLC8ccQEgNKHsPEfL9062yrnO9BDw/export?format=csv";
 
-        // 2. AUTO-FETCH THE MAP COORDINATES
+        // 2. AUTO-FETCH MAP COORDINATES
         fetch('mapdata.txt')
             .then(response => response.text())
             .then(rawText => {
@@ -34,7 +34,7 @@
                 }
             });
 
-        // 3. DRAW THE MAP
+        // 3. MAP DRAWING & AUTO-COUNTING LOGIC
         function drawMap(tarlacGeoJSON) {
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -49,10 +49,14 @@
 
             d3.csv(sheetCsvUrl).then(sheetData => {
                 
+                // AUTOMATICALLY COUNTS APPEARANCES IN COLUMN E
                 const documentCounts = {};
                 sheetData.forEach(row => {
-                    if(row["Received From Office"]) {
-                        documentCounts[row["Received From Office"].trim()] = +row["Total Requests"] || 0;
+                    const office = row["Received From Office"];
+                    if(office && office.trim() !== "") {
+                        const mapName = office.trim();
+                        // Adds 1 to the town's total every time it appears
+                        documentCounts[mapName] = (documentCounts[mapName] || 0) + 1;
                     }
                 });
 
@@ -74,7 +78,7 @@
                         const count = documentCounts[mapName] || 0;
                         d3.select(this).attr("stroke-width", 3).attr("stroke", "#ff9900");
                         tooltip.style("opacity", 1)
-                               .html(`<b>${mapName}</b><br/>Documents: ${count}`)
+                               .html(`<b>${mapName}</b><br/>Total Documents: ${count}`)
                                .style("left", (event.pageX + 10) + "px")
                                .style("top", (event.pageY - 20) + "px");
                     })
